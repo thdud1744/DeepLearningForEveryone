@@ -1,0 +1,136 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Jan 22 21:31:23 2019
+
+@author: soyeo
+"""
+
+import tensorflow as tf
+import matplotlib.pyplot as plt
+
+X = [1,2,3]
+Y = [1,2,3]
+
+# H(x) = W*x
+# cost(W) = 1/m sum(W*x - y)^2
+
+W = tf.placeholder(tf.float32)
+hypothesis = X * W
+
+# cost/loss function
+cost = tf.reduce_mean(tf.square(hypothesis - Y))
+
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
+
+# store variables for plotting the cost function graph
+W_val = []
+cost_val = []
+
+for i in range(-30, 50):
+    feed_W = i * 0.1
+    curr_cost, curr_W = sess.run([cost, W], feed_dict={W: feed_W})
+    W_val.append(curr_W)
+    cost_val.append(curr_cost)
+    
+# draw cost function graph
+plt.plot(W_val, cost_val)
+plt.show()
+
+
+# Gradient descent 기울기 감소
+# 원래 W 값에서 W를 미분한 값(기울기:Gradient) 를 빼준다(:descent).
+
+# Minimize: Gradient descent using derivative: W -= learning_rate * derivative
+
+learning_rate = 0.1
+gradient = tf.reduce_mean((W * X - Y) * X) # W를 미분한 식에서 나온 값이다.
+descent = W - learning_rate * gradient
+update = W.assign(descent)
+# Tensorflow에서 Tensor를 = 로 바로 값을 할당할 수 없고 .assign() 활용하여 함.
+
+# 그래프에서 update를 활용함
+
+
+
+# ----------------------------------------------------------------------
+# whole code example
+x_data = [1,2,3]
+y_data = [1,2,3]
+
+W = tf.Variable(tf.random_normal([1]), name='weight')
+X = tf.placeholder(tf.float32)
+Y = tf.placeholder(tf.float32)
+
+hypothesis = X * W
+
+cost = tf.reduce_mean(tf.square(hypothesis - Y))
+
+## Minimize part---------------------
+learning_rate = 0.1
+gradient = tf.reduce_mean((W * X - Y) * X)
+descent = W - learning_rate * gradient
+update = W.assign(descent)
+## Minimize part---------------------
+
+# is equal to------------------------
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
+train = optimizer.minimize(cost)
+# this-------------------------------
+
+
+# launch the graph in a session
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
+for step in range(21):
+    sess.run(update, feed_dict={X: x_data, Y:y_data})
+    print(step, sess.run(cost, feed_dict={X:x_data, Y:y_data}), sess.run(W))
+    # in this example, W should be very close to 1.
+
+
+# -----------------------------------------------------------------------------
+# another example when W = 5 at first.
+X = [1,2,3]
+Y = [1,2,3]
+W = tf.Variable(5.0)
+hypothesis = X * W
+cost = tf.reduce_mean(tf.square(hypothesis - Y))
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
+train = optimizer.minimize(cost)
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
+for step in range(100):
+    print(step, sess.run(W))
+    sess.run(train)
+# 학습 수가 커지면서 빠르게 1로 수렴한다. -3일떄도 마찬가지로 빠르게 1로 수렴.
+    
+    
+# -----------------------------------------------------------------------------
+# Compute gradient and apply gradient
+X = [1,2,3]
+Y = [1,2,3]
+
+W = tf.Variable(5.)
+
+hypothesis = X * W
+
+# 직접 계산한 gradient
+gradient = tf.reduce_mean((W * X - Y) * X) * 2
+
+cost = tf.reduce_mean(tf.square(hypothesis - Y))
+optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.1)
+# instead of 'train = optimizer.minimize(cost)'
+# Get gradients
+gvs = optimizer.compute_gradients(cost, [W])
+# you can apply something to the gradients here. gradients에 다른 값을 더 곱할 수 있다.
+apply_gradients = optimizer.apply_gradients(gvs)
+
+sess = tf.Session()
+sess.run(tf.global_variables_initializer())
+
+for step in range(100):
+    print(step, sess.run([gradient, W, gvs])) # 값이 거의 같다.
+    sess.run(apply_gradients)
+    
+# 0 [37.333332, 5.0, [(37.333336, 5.0)]]
+  # self calculation,  compute_gradients
